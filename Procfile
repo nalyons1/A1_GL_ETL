@@ -1,0 +1,1 @@
+worker: python A1_GL_ETL.py
