@@ -1,1 +1,1 @@
-web: python A1_GL_ETL.py
+web: python -m http.server 8000
