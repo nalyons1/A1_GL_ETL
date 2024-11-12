@@ -2,6 +2,8 @@ import requests
 from requests_oauthlib import OAuth2Session
 import pandas as pd
 import json
+import http.server
+import socketserver
 
 # Replace these with your Intuit Developer credentials
 client_id = 'ABxsLRJiGkDrk40adSycRTCvs7B0Jdd1xhai4GA5m5HNj08woe'
@@ -18,4 +20,15 @@ company_id = '9341453379108250'  # Find this ID on your QBO account
 oauth_session = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 authorization_url, state = oauth_session.authorization_url(auth_base_url)
 print("Visit this URL to authorize the app:", authorization_url)
+
+
+# Define the port for the server
+PORT = 8000
+
+Handler = http.server.SimpleHTTPRequestHandler
+
+# Create and start the HTTP server
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print("serving at port", PORT)
+    httpd.serve_forever()
 
