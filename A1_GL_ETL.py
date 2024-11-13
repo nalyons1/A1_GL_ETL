@@ -1,34 +1,31 @@
+import os
 import requests
 from requests_oauthlib import OAuth2Session
 import pandas as pd
-import json
 import http.server
 import socketserver
 
-# Replace these with your Intuit Developer credentials
+# Intuit Developer credentials
 client_id = 'ABxsLRJiGkDrk40adSycRTCvs7B0Jdd1xhai4GA5m5HNj08woe'
 client_secret = 'OYRKW4Zncf6gzTa4ANOoiOACoahhSUjNp55f7XPj'
-redirect_uri = 'http://localhost:8000/callback'
+redirect_uri = 'http://localhost/callback'  # Update this as needed for Heroku
 
-# Define the scope for QuickBooks Online API
+# QuickBooks Online API details
 scope = ['com.intuit.quickbooks.accounting']
 auth_base_url = "https://appcenter.intuit.com/connect/oauth2"
 token_url = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-company_id = '9341453379108250'  # Find this ID on your QBO account
+company_id = '9341453379108250'
 
-# Start the OAuth2 session
+# Start OAuth2 session
 oauth_session = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 authorization_url, state = oauth_session.authorization_url(auth_base_url)
 print("Visit this URL to authorize the app:", authorization_url)
 
+# Heroku assigns a dynamic port
+PORT = int(os.environ.get("PORT", 8000))
 
-# Define the port for the server
-PORT = 8000
-
+# Set up and start the HTTP server
 Handler = http.server.SimpleHTTPRequestHandler
-
-# Create and start the HTTP server
 with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print("serving at port", PORT)
+    print("Serving at port", PORT)
     httpd.serve_forever()
-
