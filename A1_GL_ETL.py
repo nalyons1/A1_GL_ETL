@@ -4,17 +4,18 @@ from requests_oauthlib import OAuth2Session
 import http.server
 import socketserver
 from urllib.parse import urlparse, parse_qs
+import pandas as pd
 
 # Intuit Developer credentials
-client_id = 'ABxsLRJiGkDrk40adSycRTCvs7B0Jdd1xhai4GA5m5HNj08woe'
-client_secret = 'OYRKW4Zncf6gzTa4ANOoiOACoahhSUjNp55f7XPj'
+client_id = 'ABRJTQ4dR43hWwyTSTiwC1n8E7suExD0XpwVoQsvdu7MPfqLtW'
+client_secret = '2pChmqkYU1wM6jVFxtHRzJwGoMejYQ45r8WWFbKo'
 redirect_uri = 'https://a1-gl-etl.herokuapp.com/callback'  # Update for your Heroku URL
 
 # QuickBooks Online API details
 scope = ['com.intuit.quickbooks.accounting']
 auth_base_url = "https://appcenter.intuit.com/connect/oauth2"
 token_url = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-company_id = '9341453379108250'
+sandbox_company_id = '9341453379095730'
 
 # Start OAuth2 session
 oauth_session = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
@@ -38,10 +39,15 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                         code=code
                     )
                     print("Access token received:", token)
-                    # Send a response to the client
+
+                    # Fetch and display customer data
+                    customer_data = self.get_customer_data(token)
+                    html_data = customer_data.to_html() if customer_data is not None else "Error fetching data."
+
+                    # Send a response with HTML table
                     self.send_response(200)
                     self.end_headers()
-                    self.wfile.write(b"Authorization complete. Token received.")
+                    self.wfile.write(html_data.encode())
                 except Exception as e:
                     print("Error exchanging token:", e)
                     self.send_response(500)
@@ -53,6 +59,21 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b"Authorization code not found in the callback.")
         else:
             super().do_GET()
+
+    def get_customer_data(self, token):
+        url = f"https://sandbox-quickbooks.api.intuit.com/v3/company/{sandbox_company_id}/query?query=SELECT * FROM Customer"
+        headers = {
+            'Authorization': f"Bearer {token['access_token']}",
+            'Content-Type': 'application/json'
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            customers = data['QueryResponse']['Customer']
+            return pd.DataFrame(customers)
+        else:
+            print(f"Failed to retrieve data: {response.status_code}")
+            return None
 
 # Heroku dynamically assigns the port
 PORT = int(os.environ.get("PORT", 8000))
